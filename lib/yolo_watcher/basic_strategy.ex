@@ -39,7 +39,7 @@ defmodule YoloWatcher.BasicStrategy do
     double_after_split? = Keyword.get(opts, :das, false)
     double_down? = Keyword.get(opts, :dd, false)
 
-    player = Enum.map(player_hand, &parse_card/1)
+    player = player_hand |> Enum.map(&parse_card/1) |> Enum.sort(:desc)
     dealer = parse_card(dealer_upcard)
 
     Enum.find(

@@ -18,8 +18,6 @@ defmodule YoloWatcherWeb.Router do
     pipe_through :browser
 
     live "/", BlackJackLive
-
-
   end
 
   # Other scopes may use custom stacks.

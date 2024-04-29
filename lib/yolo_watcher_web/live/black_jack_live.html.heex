@@ -1,7 +1,5 @@
-<%
-btn = "relative inline-flex items-center bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10"
-
-%>
+<% btn =
+  "relative inline-flex items-center bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10" %>
 <!--
   a detection is a map with the following keys:
   "xyxy" - a list of 4 integers representing the bounding box of the detection (x1, y1, x2, y2)
@@ -10,113 +8,133 @@ btn = "relative inline-flex items-center bg-white px-3 py-2 text-sm font-semibol
   "cls_n" - a string representing the class name of the detection
 -->
 <div>
-    <div class="bg-gray-800 text-white p-4">
-        <h1 class="text-2xl font-bold">YOLO - BlackJack Watcher</h1>
+  <div class="bg-gray-800 text-white p-4">
+    <h1 class="text-2xl font-bold">YOLO - BlackJack Watcher</h1>
+  </div>
+  <div class="flex flex-col space-y-4 ml-4">
+    <div class="pt-4">
+      <h2 class="text-lg font-bold">Total Detections: <%= @analysis.total_detections %></h2>
+      <h2 class="text-lg font-bold">Distinct Detections: <%= @analysis.distinct_detections %></h2>
+      <%= if @collecting do %>
+        <h2 class="text-lg font-bold">Collecting</h2>
+      <% else %>
+        <h2 class="text-lg font-bold">Paused</h2>
+      <% end %>
     </div>
-    <div class="flex flex-col space-y-4 ml-4">
-        <div class="pt-4">
-            <h2 class="text-lg font-bold">Total Detections: <%= @analysis.total_detections %></h2>
-            <h2 class="text-lg font-bold">Distinct Detections: <%= @analysis.distinct_detections %></h2>
-            <%= if @collecting do %>
-                <h2 class="text-lg font-bold">Collecting</h2>
-            <% else %>
-                <h2 class="text-lg font-bold">Paused</h2>
+    <div>
+      <span class="isolate inline-flex rounded-md shadow-sm">
+        <button phx-click="reset" type="button" class={[btn, "rounded-l-md"]}>Reset</button>
+        <button
+          phx-click="pause"
+          type="button"
+          disabled={!@collecting}
+          class={[btn, if(!@collecting, do: "opacity-50")]}
+        >
+          Pause
+        </button>
+        <button
+          phx-click="resume"
+          type="button"
+          disabled={@collecting}
+          class={[btn, "rounded-r-md", if(@collecting, do: "opacity-50")]}
+        >
+          Resume
+        </button>
+      </span>
+    </div>
+    <div class="flex space-x-8">
+      <div>
+        <h2 class="text-lg font-bold">Latest Detections</h2>
+        <div class="min-w-md p-4">
+          <ul>
+            <!-- list the last 10 matches in a nice format -->
+            <%= for %{"xyxy" => [x1, y1, x2, y2]} = detection <- Enum.take(@detections, 10) do %>
+              <li class="p-4 border border-gray-300 rounded-lg mb-4">
+                <div class="flex justify-between">
+                  <div>
+                    <p class="text-lg font-bold"><%= detection["cls_n"] %></p>
+                    <p class="text-sm text-gray-500">
+                      Confidence: <%= format_conf(detection["conf"]) %>
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-500"><%= "p1: #{format_point(x1, y1)}" %></p>
+                    <p class="text-sm text-gray-500"><%= "p2: #{format_point(x2, y2)}" %></p>
+                  </div>
+                </div>
+              </li>
             <% end %>
+          </ul>
         </div>
-        <div>
-            <span class="isolate inline-flex rounded-md shadow-sm">
-              <button phx-click="reset" type="button" class={[btn, "rounded-l-md"]}>Reset</button>
-              <button phx-click="pause" type="button" disabled={!@collecting} class={[btn, if(!@collecting, do: "opacity-50")]}>Pause</button>
-              <button phx-click="resume" type="button" disabled={@collecting} class={[btn, "rounded-r-md", if(@collecting, do: "opacity-50")]}>Resume</button>
-            </span>
+      </div>
+
+      <div>
+        <h2 class="text-lg font-bold">Frequencies</h2>
+        <div class="min-w-md p-4">
+          <ul>
+            <!-- list the frequencies of the classes in a nice format -->
+            <%= for {cls_n, card} <- @analysis.frequencies do %>
+              <li class="p-4 border border-gray-300 rounded-lg mb-4">
+                <div class="flex justify-between">
+                  <div class="mr-4">
+                    <img src={card_path(cls_n)} class="w-16 h-24" />
+                  </div>
+                  <div class="mr-4">
+                    <p class="text-lg font-bold"><%= cls_n %></p>
+                    <p class="text-sm text-gray-500">Count: <%= card.count %></p>
+                    <p class="text-sm text-gray-500">
+                      Avg Conf: <%= tf(card.average_confidence * 100) %>
+                    </p>
+                    <p class="text-sm text-gray-500">
+                      Avg Pos: <%= format_point(card.avg_x, card.avg_y) %>
+                    </p>
+                    <p class="text-sm text-gray-500">
+                      Max Conf: <%= tf(card.max_confidence * 100) %>
+                    </p>
+                    <p class="text-sm text-gray-500">
+                      Min Conf: <%= tf(card.min_confidence * 100) %>
+                    </p>
+                  </div>
+                </div>
+              </li>
+            <% end %>
+          </ul>
         </div>
-        <div class="flex space-x-8">
-            <div>
-                <h2 class="text-lg font-bold">Latest Detections</h2>
-                <div class="min-w-md p-4">
-
-                    <ul>
-                        <!-- list the last 10 matches in a nice format -->
-                        <%= for %{"xyxy" => [x1, y1, x2, y2]} = detection <- Enum.take(@detections, 10) do %>
-                        <li class="p-4 border border-gray-300 rounded-lg mb-4">
-                            <div class="flex justify-between">
-                                <div>
-                                    <p class="text-lg font-bold"><%= detection["cls_n"] %></p>
-                                    <p class="text-sm text-gray-500">Confidence: <%= format_conf(detection["conf"])
-                                        %></p>
-                                </div>
-                                <div>
-                                    <p class="text-sm text-gray-500"><%= "p1: #{format_point(x1, y1)}" %></p>
-                                    <p class="text-sm text-gray-500"><%= "p2: #{format_point(x2, y2)}" %></p>
-                                </div>
-                            </div>
-                        </li>
-                        <% end %>
-                    </ul>
-
+      </div>
+      <div>
+        <h2 class="text-lg font-bold">Analysis</h2>
+        <div class="min-w-md p-4">
+          <%= case suggest_strategy(@detections) do %>
+            <% %{player: [p1, p2], dealer: d, action: action, action_text: action_text} -> %>
+              <div class="flex flex-col space-y-4">
+                <div class="flex space-x-4">
+                  <div>
+                    <p class="text-lg font-bold">Player</p>
+                    <div class="flex space-x-2 border p-2">
+                      <img src={card_path(p1)} class="w-16 h-24" />
+                      <img src={card_path(p2)} class="w-16 h-24" />
+                    </div>
+                  </div>
+                  <div>
+                    <p class="text-lg font-bold">Dealer</p>
+                    <div class="border p-2">
+                      <img src={card_path(d)} class="w-16 h-24" />
+                    </div>
+                  </div>
                 </div>
-            </div>
-
-            <div>
-                <h2 class="text-lg font-bold">Frequencies</h2>
-                <div class="min-w-md p-4">
-                    <ul>
-                        <!-- list the frequencies of the classes in a nice format -->
-                        <%= for {cls_n, card} <- @analysis.frequencies do %>
-                        <li class="p-4 border border-gray-300 rounded-lg mb-4">
-                            <div class="flex justify-between">
-                                <div class="mr-4">
-                                    <img src={ card_path(cls_n) } class="w-16 h-24"/>
-                                </div>
-                                <div class="mr-4">
-                                    <p class="text-lg font-bold"><%= cls_n %></p>
-                                    <p class="text-sm text-gray-500">Count: <%= card.count %></p>
-                                    <p class="text-sm text-gray-500">Avg Conf: <%= tf(card.average_confidence * 100) %></p>
-                                    <p class="text-sm text-gray-500">Avg Pos: <%= format_point(card.avg_x, card.avg_y) %></p>
-                                    <p class="text-sm text-gray-500">Max Conf: <%= tf(card.max_confidence * 100) %></p>
-                                    <p class="text-sm text-gray-500">Min Conf: <%= tf(card.min_confidence * 100) %></p>
-                                </div>
-                            </div>
-                        </li>
-                        <% end %>
-                    </ul>
+                <div>
+                  <p class="text-lg font-bold">Suggested Strategy</p>
+                  <p class="text-sm text-gray-500">
+                    <Components.action_badge action={action} />
+                    <p><%= action_text %></p>
+                  </p>
                 </div>
-            </div>
-            <div>
-                <h2 class="text-lg font-bold">Analysis</h2>
-                <div class="min-w-md p-4">
-                    <%= case suggest_strategy(@detections) do %>
-                        <% %{player: [p1, p2], dealer: d, action: action, action_text: action_text} -> %>
-                            <div class="flex flex-col space-y-4">
-                                <div class="flex space-x-4">
-                                    <div>
-                                        <p class="text-lg font-bold">Player</p>
-                                        <div class="flex space-x-2 border p-2">
-                                            <img src={ card_path(p1) } class="w-16 h-24"/>
-                                            <img src={ card_path(p2) } class="w-16 h-24"/>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <p class="text-lg font-bold">Dealer</p>
-                                        <div class="border p-2">
-                                            <img src={ card_path(d) } class="w-16 h-24"/>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <p class="text-lg font-bold">Suggested Strategy</p>
-                                    <p class="text-sm text-gray-500">
-                                        <Components.action_badge action={action} />
-                                        <p><%= action_text %></p>
-                                    </p>
-                                </div>
-                            </div>
-                       <% _ -> %>
-                            <p class="text-lg font-bold">No Strategy Suggested</p>
-                  <% end %>
-                </div>
-            </div>
-
+              </div>
+            <% _ -> %>
+              <p class="text-lg font-bold">No Strategy Suggested</p>
+          <% end %>
         </div>
+      </div>
     </div>
+  </div>
 </div>
