@@ -8,10 +8,22 @@ defmodule YoloWatcherWeb.BlackJackLive.Components do
   :hit = blue
   :surrender = purple
   :split = orange
+  :split_and_double = orange
   """
   def action_badge(assigns) do
+    color = case assigns.action do
+      :stand -> "yellow"
+      :double -> "green"
+      :hit -> "blue"
+      :surrender -> "purple"
+      :split -> "indigo"
+      :split_and_double -> "indigo"
+      _ -> "gray"
+    end
+
+    assigns = assign(assigns, :color_classes, "bg-#{color}-50 text-#{color}-800 ring-#{color}-700/10")
     ~H"""
-    <span class="inline-flex items-center rounded-md bg-pink-50 px-2 py-1 text-4xl font-medium text-pink-700 ring-1 ring-inset ring-pink-700/10">
+    <span class={["inline-flex items-center rounded-md px-2 py-1 text-4xl font-medium ring-1 ring-inset", @color_classes]}>
       <%= Phoenix.Naming.humanize(@action) %>
     </span>
     """

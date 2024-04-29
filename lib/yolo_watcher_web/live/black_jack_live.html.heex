@@ -15,8 +15,8 @@ btn = "relative inline-flex items-center bg-white px-3 py-2 text-sm font-semibol
     </div>
     <div class="flex flex-col space-y-4 ml-4">
         <div class="pt-4">
-            <h2 class="text-lg font-bold">Total Detections: <%= Enum.count(@detections) %></h2>
-            <h2 class="text-lg font-bold">Distinct Detections: <%= Enum.count(@frequencies) %></h2>
+            <h2 class="text-lg font-bold">Total Detections: <%= @analysis.total_detections %></h2>
+            <h2 class="text-lg font-bold">Distinct Detections: <%= @analysis.distinct_detections %></h2>
             <%= if @collecting do %>
                 <h2 class="text-lg font-bold">Collecting</h2>
             <% else %>
@@ -26,8 +26,8 @@ btn = "relative inline-flex items-center bg-white px-3 py-2 text-sm font-semibol
         <div>
             <span class="isolate inline-flex rounded-md shadow-sm">
               <button phx-click="reset" type="button" class={[btn, "rounded-l-md"]}>Reset</button>
-              <button phx-click="pause" type="button" disabled={@collecting} class={[btn, if(!@collecting, do: "opacity-50")]}>Pause</button>
-              <button phx-click="resume" type="button" disabled={!@collecting} class={[btn, "rounded-r-md", if(@collecting, do: "opacity-50")]}>Resume</button>
+              <button phx-click="pause" type="button" disabled={!@collecting} class={[btn, if(!@collecting, do: "opacity-50")]}>Pause</button>
+              <button phx-click="resume" type="button" disabled={@collecting} class={[btn, "rounded-r-md", if(@collecting, do: "opacity-50")]}>Resume</button>
             </span>
         </div>
         <div class="flex space-x-8">
@@ -62,15 +62,19 @@ btn = "relative inline-flex items-center bg-white px-3 py-2 text-sm font-semibol
                 <div class="min-w-md p-4">
                     <ul>
                         <!-- list the frequencies of the classes in a nice format -->
-                        <%= for {cls_n, count} <- @frequencies do %>
+                        <%= for {cls_n, card} <- @analysis.frequencies do %>
                         <li class="p-4 border border-gray-300 rounded-lg mb-4">
                             <div class="flex justify-between">
                                 <div class="mr-4">
                                     <img src={ card_path(cls_n) } class="w-16 h-24"/>
                                 </div>
-                                <div>
+                                <div class="mr-4">
                                     <p class="text-lg font-bold"><%= cls_n %></p>
-                                    <p class="text-sm text-gray-500">Count: <%= count %></p>
+                                    <p class="text-sm text-gray-500">Count: <%= card.count %></p>
+                                    <p class="text-sm text-gray-500">Avg Conf: <%= tf(card.average_confidence * 100) %></p>
+                                    <p class="text-sm text-gray-500">Avg Pos: <%= format_point(card.avg_x, card.avg_y) %></p>
+                                    <p class="text-sm text-gray-500">Max Conf: <%= tf(card.max_confidence * 100) %></p>
+                                    <p class="text-sm text-gray-500">Min Conf: <%= tf(card.min_confidence * 100) %></p>
                                 </div>
                             </div>
                         </li>
@@ -79,9 +83,9 @@ btn = "relative inline-flex items-center bg-white px-3 py-2 text-sm font-semibol
                 </div>
             </div>
             <div>
-                <h2 class="text-lg font-bold">Frequencies</h2>
+                <h2 class="text-lg font-bold">Analysis</h2>
                 <div class="min-w-md p-4">
-                    <%= case suggest_strategy(@frequencies) do %>
+                    <%= case suggest_strategy(@detections) do %>
                         <% %{player: [p1, p2], dealer: d, action: action, action_text: action_text} -> %>
                             <div class="flex flex-col space-y-4">
                                 <div class="flex space-x-4">
