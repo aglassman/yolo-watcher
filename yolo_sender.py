@@ -7,10 +7,20 @@ import sys
 import json
 
 def main():
+    server_address = ('localhost', 4040)  # Adjust as necessary
+    print("creating socket")
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    print(f"connecting {server_address}")
+    client_socket.connect(server_address)
+
+    print("creating video capture")
     cap = cv2.VideoCapture(0)
 
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+
+    print("loading model")
     model = YOLO("train8/weights/best.pt", verbose=False)
 
     boxAnnotater = sv.BoundingBoxAnnotator(
@@ -22,14 +32,8 @@ def main():
         text_scale=2
     )
 
-    # Create a TCP/IP socket
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    # Connect the socket to the server's address and port
-    server_address = ('localhost', 4040)  # Adjust as necessary
-    client_socket.connect(server_address)
-
     try:
+        print("starting loop")
         while True:
             ret, frame = cap.read()
             result = model(frame)[0]
@@ -47,6 +51,7 @@ def main():
 
             boxedFrame = boxAnnotater.annotate(scene=frame,detections=detections)
             labeledFrame = labelAnnotater.annotate(scene=boxedFrame,detections=detections)
+            cv2.line(frame, (0, 240), (640, 240), (0, 0, 255), 2)
             cv2.imshow('CardDetector', labeledFrame)
 
             if cv2.waitKey(30) == 27:
@@ -63,6 +68,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-#%%
-
-#%%
