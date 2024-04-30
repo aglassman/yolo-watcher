@@ -55,7 +55,10 @@ defmodule YoloWatcher.BasicStrategy do
   end
 
   def parse_card(card_string) do
-    [rank | _] = String.graphemes(card_string)
+    rank = case String.graphemes(card_string) do
+      ["1", "0" | _] -> "10"
+      [rank | _] ->  rank
+    end
     @points[rank]
   end
 
@@ -73,9 +76,9 @@ defmodule YoloWatcher.BasicStrategy do
   def split([x, x], dealer, _das) when x in [2, 3] and dealer in [4, 5, 6, 7], do: {:split, "Split 2s and 3s against dealer 4-7."}
   def split(_, _, _), do: nil
 
-  def soft([11, 9], _dealer, _dd), do: {:stand, "Always stand on 20."}
+  def soft([11, 9], _dealer, _dd), do: {:stand, "Always stand on soft 20."}
   def soft([11, 8], 6, true), do: {:double, "Double on 19 against dealer 6."}
-  def soft([11, 8], _dealer, _dd), do: {:stand, "Always stand on 19."}
+  def soft([11, 8], _dealer, _dd), do: {:stand, "Always stand on soft 19."}
   def soft([11, 7], dealer, true) when dealer < 7, do: {:double, "Double on soft 18 against dealer 2-6."}
   def soft([11, 7], dealer, _dd) when dealer < 9, do: {:stand, "Stand on soft 18 against dealer 2-8."}
   def soft([11, 6], dealer, true) when dealer in [3, 4, 5, 6], do: {:double, "Double on soft 17 against dealer 3-6."}
