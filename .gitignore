@@ -35,3 +35,4 @@ yolo_watcher-*.tar
 npm-debug.log
 /assets/node_modules/
 
+/Dockerfile

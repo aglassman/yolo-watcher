@@ -21,7 +21,7 @@ def main():
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
     print("loading model")
-    model = YOLO("train8/weights/best.pt", verbose=False)
+    model = YOLO("best_yolov8_weights.pt", verbose=False)
 
     boxAnnotater = sv.BoundingBoxAnnotator(
         thickness=2
@@ -47,7 +47,9 @@ def main():
                     "cls_id": int(d.class_id[0]),
                     "cls_n": d['class_name'][0]
                 }
-                client_socket.sendall(json.dumps(line).encode('utf-8') + b'\n')
+                d_json = json.dumps(line).encode('utf-8')
+                print(d_json)
+                client_socket.sendall(d_json + b'\n')
 
             boxedFrame = boxAnnotater.annotate(scene=frame,detections=detections)
             labeledFrame = labelAnnotater.annotate(scene=boxedFrame,detections=detections)
@@ -59,6 +61,8 @@ def main():
                 cv2.destroyAllWindows()
                 print("Exiting...")
                 break
+    except Exception as e:
+        print(f"Error: {e}")
     finally:
         client_socket.close()
         cv2.destroyAllWindows()

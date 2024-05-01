@@ -45,6 +45,9 @@ defmodule ResultsServer do
         "detection",
         {:new_detection, socket, detection}
       )
+    else
+      _ ->
+        Logger.error("Failed to parse detection: #{inspect(data)}")
     end
 
     socket

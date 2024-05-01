@@ -1,4 +1,13 @@
 defmodule YoloWatcherWeb.BlackJackLive do
+  @moduledoc """
+  This module contains the LiveView for the blackjack detection page.
+
+  Detections are received via the YoloWatcher.PubSub, "detection" topic.
+
+  Detections are fifo, and only the last 50 are kept.
+
+  The buffer can be reset, and collection can be paused and resumed.
+  """
   use Phoenix.LiveView
 
   alias YoloWatcherWeb.BlackJackLive.Components
@@ -78,6 +87,32 @@ defmodule YoloWatcherWeb.BlackJackLive do
     }
   end
 
+  @doc """
+  Given a list of detections, perform a basic aggregation.
+
+  Output:
+  ```
+  %{
+    total_detections: total_detections, # The total number of detections.
+    distinct_detections: distinct_detections, # The number of unique card types detected.
+    frequencies: frequencies # List of unique card types and their counts.
+  }
+  ```
+
+  Each unique card will have a value in the frequencies list, sorted by count, descending.
+  ```
+  %{
+     count: count, # The number of detections for card type.
+     points: points, # List of the points for detections of the card type.
+     avg_x: tx / count, # Average x position of the card derived from the points.
+     avg_y: ty / count, # Average y position of the card derived from the points.
+     average_confidence: Enum.sum(confs) / count, # Average confidence of the detections.
+     max_confidence: Enum.max(confs), # Maximum confidence of the detections.
+     min_confidence: Enum.min(confs) # Minimum confidence of the detections.
+   }
+  ```
+
+  """
   def analysis(detections) do
     total_detections = Enum.count(detections)
 
@@ -139,6 +174,18 @@ defmodule YoloWatcherWeb.BlackJackLive do
     true
   end
 
+  @doc """
+  Given a list of detections, suggest a strategy based on the detections.
+
+  First, the detections are analyzed using the `analysis/1` function.
+  The unique card types are then grouped by their position on the screen.
+
+  Player cards are assumed to be in the top half of the screen, and dealer cards are assumed to be in the bottom half.
+
+  The top two player cards and the top dealer card are selected based on the maximum confidence.
+
+  Finally, the selected cards are used to suggest a strategy.
+  """
   def suggest_strategy(detections) do
     %{
       frequencies: frequencies
